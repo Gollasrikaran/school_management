@@ -1,8 +1,9 @@
 import streamlit as st
-from database import create_users_table, add_user, create_school_tables, load_data, create_connection
+from database import create_users_table, add_user, create_school_tables, load_data, create_connection, authenticate_user
 from auth import login_form
 from branch_admin import branch_admin_dashboard
 from teacher_dashboard import teacher_dashboard
+from superadmin_overview import display_superadmin_overview
 import pandas as pd
 
 
@@ -27,7 +28,10 @@ def home_page():
 
 def superadmin_dashboard():
     st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox("Choose a page", ["Schools", "Branches", "Teachers", "Classes"])
+    page = st.sidebar.selectbox("Choose a page", ["Overview","Schools", "Branches", "Teachers", "Classes"])
+
+    if page == "Overview":
+         display_superadmin_overview()
 
     if page == "Schools":
         st.header("Manage Schools")
@@ -321,21 +325,23 @@ def main():
         else:
             home_page()
     # --- Add new user section (for dev) ---
-    st.sidebar.title("Dev Add User")
-    with st.sidebar.form("add_user"):
-        new_username = st.text_input("New Username")
-        new_password = st.text_input("New Password", type="password")
-        new_role = st.selectbox("Select Role", ["superadmin", "branchadmin", "teacher"])
-        add_user_button = st.form_submit_button("Add New User")
-
-    if add_user_button:
-         add_user(new_username, new_password, new_role)
+    
 
 if __name__ == "__main__":
-    # Add users with provided credentials (for demo)
-    add_user("admin@his.com", "admin", "superadmin")
-    add_user("akt", "akt", "branchadmin")
-    add_user("tkt", "tkt", "teacher")
+    # Add users with provided credentials (for demo), only if they don't exist
+    
+    # Check if user 'admin@his.com' exists before adding
+    if not authenticate_user("admin@his.com", "admin"):
+        add_user("admin@his.com", "admin", "superadmin")
+        
+    # Check if user 'akt' exists before adding
+    if not authenticate_user("akt", "akt"):
+       add_user("akt", "akt", "branchadmin")
+       
+    # Check if user 'tkt' exists before adding
+    if not authenticate_user("tkt", "tkt"):
+        add_user("tkt", "tkt", "teacher")
+        
     # Add dummy branch for demo
     conn = create_connection("school.db")
     with conn:
